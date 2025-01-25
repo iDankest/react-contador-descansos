@@ -6,21 +6,34 @@
     align-items: center;
     justify-content: center;
 }
-label{
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1em;
-}
-label input{
-    width: 100%;
-    border-radius: 10px;
+
+input{
+    width: 90%;
+    height: 5em;
+    border-radius: 20px;
 }
 .container-inputs{
     display: flex;
+    width: 400px;
+    height: 300px;
     flex-direction: column;
-    gap: 1em;
+    gap: 2.5em;
     padding: 2.5em;
-    background-color: rgba(116, 110, 102, 0.436);
-    border-radius: 10%;
+    background-color: #0A0A0A;
+    border-radius: 5%;
+    justify-content: center;
+    align-items: center;
+}
+.btn-style{
+    display: flex;
+    gap:  1em;
+    width: 100%;
+    justify-content: space-evenly;
+}
+.btn-style button{
+    padding: 1em;
+}
+::placeholder{
+    text-align: center;
+    
 }
