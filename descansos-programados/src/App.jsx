@@ -1,15 +1,36 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import './App.css'
 
 function App() {
   const [des, setDes] = useState(0)
   const [studyTime, setStudyTime] = useState('')
   const [breakInterval, setBreakInterval] = useState('')
+  const [timeLeft, setTimeLeft] = useState('')
   function handleButtonClick(minutes){
     console.log(minutes)
     setDes(minutes)
 
   }
+  useEffect(() => {
+    if (studyTime > 0) {
+      setTimeLeft(studyTime * 60)
+    }
+  }, [studyTime]);
+  useEffect(()=>{
+    let intervalId;
+    if(timeLeft > 0){
+      intervalId = setInterval(() => {
+        setTimeLeft((prevTimeLeft) => prevTimeLeft - 1);
+      }, 1000);
+    }
+    return () => clearInterval(intervalId);
+
+  }, [timeLeft])
+ useEffect(() => {
+  if (timeLeft === 0) {
+    alert('¡Tiempo terminado!');
+  }
+ }, [timeLeft]);
 
   return (
     <main className='container'>
@@ -23,10 +44,17 @@ function App() {
         <button onClick={() =>handleButtonClick(10)}>10 mins</button>
         <button onClick={() =>handleButtonClick(15)}>15 mins</button>
         </div>
-        <input type="number" name="i-descansos" id="i-descansos" placeholder='intervalo de descansos(mins)'/>
+        <input type="number" name="i-descansos" id="i-descansos" placeholder='intervalo de descansos(mins)' value={breakInterval} onChange={(e) => setBreakInterval(e.target.value)}/>
 
       </div>
-      <p>Esta programado {des} mins de descanso {studyTime/60}H</p>
+      <div className='info-result'>
+        <h2>Tiempo de {Math.floor(timeLeft/3600)}H {Math.floor(Math.floor(timeLeft%3600)/60)}M {timeLeft % 60}S</h2>
+      <ol>
+        <li>Tiempo de Estudio/Trabajo {Math.floor(studyTime/60)} horas y {studyTime % 60} mins</li>
+        <li>Descansos de {des} mis</li>
+        <li>Periodos de descanso de {breakInterval} mins</li>
+      </ol>
+      </div>
     </main>
   )
 }
