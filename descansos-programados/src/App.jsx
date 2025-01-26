@@ -6,6 +6,7 @@ function App() {
   const [studyTime, setStudyTime] = useState('')
   const [breakInterval, setBreakInterval] = useState('')
   const [timeLeft, setTimeLeft] = useState('')
+  const [isModal, setIsModal] = useState(false)
   function handleButtonClick(minutes){
     console.log(minutes)
     setDes(minutes)
@@ -25,12 +26,21 @@ function App() {
     }
     return () => clearInterval(intervalId);
 
-  }, [timeLeft])
+  }, [timeLeft]) 
+const viewModal = () => {
+document.getElementById('modal').style.display = 'flex'
+  
+}
+const viewModalEx = () => {
+document.getElementById('modal').style.display = 'none'
+  
+}
  useEffect(() => {
   if (timeLeft === 0) {
-    alert('¡Tiempo terminado!');
+    viewModal();
   }
  }, [timeLeft]);
+
 
   return (
     <main className='container'>
@@ -54,6 +64,19 @@ function App() {
         <li>Descansos de {des} mis</li>
         <li>Periodos de descanso de {breakInterval} mins</li>
       </ol>
+      </div>
+      <div className='modal-container' id='modal'>
+        <div className='Modal'>
+          <div className='timeout'>
+            <h1>Teminaste tu jornada enorabuena 🎉</h1>
+            <button onClick={viewModalEx}>Aceptar</button>
+          </div>
+          <div className='descansotime'>
+            <h1>Toca tus {des}Mins</h1>
+            <h3>Tienes {des}</h3>
+          </div>
+          
+        </div>
       </div>
     </main>
   )
