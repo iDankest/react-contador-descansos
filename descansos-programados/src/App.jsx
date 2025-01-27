@@ -1,81 +1,174 @@
-import { useEffect, useState } from 'react'
-import './App.css'
+import { useEffect, useState, useRef } from "react";
+import "./App.css";
 
 function App() {
-  const [des, setDes] = useState(0)
-  const [studyTime, setStudyTime] = useState('')
-  const [breakInterval, setBreakInterval] = useState('')
-  const [timeLeft, setTimeLeft] = useState(0); // Asegúrate de que el estado inicial sea 0
-  const [isModalVisible, setIsModalVisible] = useState(false) // Nuevo estado para controlar la visibilidad del modal
+  const [des, setDes] = useState(1);
+  const [studyTime, setStudyTime] = useState("");
+  const [breakInterval, setBreakInterval] = useState("");
+  const [timeLeft, setTimeLeft] = useState(0);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isBreakTime, setIsBreakTime] = useState(false);
+  const [breakTimeLeft, setBreakTimeLeft] = useState(0);
+  
+  const studyTimerRef = useRef(null);
+  const breakTimerRef = useRef(null);
+  const lastStudyTimeRef = useRef(null);
 
-  function handleButtonClick(minutes) {
-    console.log(minutes)
-    setDes(minutes)
-  }
-
+  // Inicializar temporizador de estudio
   useEffect(() => {
     const parsedStudyTime = parseFloat(studyTime);
     if (parsedStudyTime > 0) {
-      setTimeLeft(Math.floor(parsedStudyTime * 60)); // Asegúrate de convertir a un número entero
+      setTimeLeft(parsedStudyTime * 60);
+      lastStudyTimeRef.current = parsedStudyTime * 60;
     }
   }, [studyTime]);
 
+  // Gestionar temporizador principal
   useEffect(() => {
-    let intervalId;
-    if (timeLeft > 0) {
-      intervalId = setInterval(() => {
-        setTimeLeft((prevTimeLeft) => prevTimeLeft - 1);
+    if (timeLeft > 0 && !isBreakTime) {
+      studyTimerRef.current = setInterval(() => {
+        setTimeLeft(prev => {
+          const newTime = prev - 1;
+          lastStudyTimeRef.current = newTime;
+          return newTime;
+        });
       }, 1000);
-    }
-    return () => clearInterval(intervalId);
-  }, [timeLeft]);
 
-  useEffect(() => {
-    if (timeLeft === 0 && studyTime > 0) { // Asegúrate de que el modal solo se muestre cuando el tiempo de estudio ha sido configurado
-      setIsModalVisible(true);
+      return () => {
+        if (studyTimerRef.current) {
+          clearInterval(studyTimerRef.current);
+        }
+      };
     }
-  }, [timeLeft, studyTime]);
+  }, [timeLeft, isBreakTime]);
+
+  // Verificar si es momento de un descanso
+  useEffect(() => {
+    if (!isBreakTime && breakInterval && timeLeft > 0) {
+      const totalSeconds = parseFloat(studyTime) * 60;
+      const elapsedSeconds = totalSeconds - timeLeft;
+      const elapsedMinutes = elapsedSeconds / 60;
+      
+      if (elapsedMinutes > 0 && 
+          elapsedSeconds > 0 && 
+          elapsedMinutes % parseFloat(breakInterval) === 0) {
+        handleStartBreak();
+      }
+    }
+  }, [timeLeft, breakInterval, studyTime]);
+
+  // Gestionar temporizador de descanso
+  useEffect(() => {
+    if (isBreakTime && breakTimeLeft > 0) {
+      breakTimerRef.current = setInterval(() => {
+        setBreakTimeLeft(prev => {
+          if (prev <= 1) {
+            handleEndBreak();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => {
+        if (breakTimerRef.current) {
+          clearInterval(breakTimerRef.current);
+        }
+      };
+    }
+  }, [isBreakTime, breakTimeLeft]);
+
+  const handleStartBreak = () => {
+    // Limpiar temporizador de estudio
+    if (studyTimerRef.current) {
+      clearInterval(studyTimerRef.current);
+    }
+    
+    setIsBreakTime(true);
+    setIsModalVisible(true);
+    setBreakTimeLeft(des * 60);
+  };
+
+  const handleEndBreak = () => {
+    // Limpiar temporizador de descanso
+    if (breakTimerRef.current) {
+      clearInterval(breakTimerRef.current);
+    }
+    
+    setIsBreakTime(false);
+    setIsModalVisible(false);
+    setBreakTimeLeft(0);
+    
+    // Restaurar el tiempo de estudio donde se quedó
+    setTimeLeft(lastStudyTimeRef.current);
+  };
 
   const handleModalClose = () => {
-    setIsModalVisible(false); // Ocultar el modal
+    handleEndBreak();
+  };
+
+  const formatTime = (time) => {
+    const minutes = Math.floor(time / 60);
+    const seconds = time % 60;
+    return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
   };
 
   return (
-    <main className='container'>
+    <main className="container">
       <h1>Descansos programados estudio o trabajo</h1>
-      <div className='container-inputs'>
-        <input type="number" name="t-estudio" id="t-estudio" placeholder='Tiempo de estudio(mins)' value={studyTime} onChange={(e) => setStudyTime(e.target.value)} />
-        <div className='btn-style'>
-          <button onClick={() => handleButtonClick(5)}>05 mins</button>
-          <button onClick={() => handleButtonClick(10)}>10 mins</button>
-          <button onClick={() => handleButtonClick(15)}>15 mins</button>
+      <div className="container-inputs">
+        <input
+          type="number"
+          name="t-estudio"
+          id="t-estudio"
+          placeholder="Tiempo de estudio (mins)"
+          value={studyTime}
+          onChange={(e) => setStudyTime(e.target.value)}
+        />
+        <div className="btn-style">
+          <button onClick={() => setDes(5)}>05 mins</button>
+          <button onClick={() => setDes(10)}>10 mins</button>
+          <button onClick={() => setDes(15)}>15 mins</button>
         </div>
-        <input type="number" name="i-descansos" id="i-descansos" placeholder='intervalo de descansos(mins)' value={breakInterval} onChange={(e) => setBreakInterval(e.target.value)} />
+        <input
+          type="number"
+          name="i-descansos"
+          id="i-descansos"
+          placeholder="Intervalo de descansos (mins)"
+          value={breakInterval}
+          onChange={(e) => setBreakInterval(e.target.value)}
+        />
       </div>
-      <div className='info-result'>
-        <h2>Tiempo de {Math.floor(timeLeft / 3600)}H {Math.floor((timeLeft % 3600) / 60)}M {timeLeft % 60}S</h2>
+      <div className="info-result">
+        <h2>Tiempo restante: {formatTime(timeLeft)}</h2>
         <ol>
-          <li>Tiempo de Estudio/Trabajo {Math.floor(studyTime / 60)} horas y {studyTime % 60} mins</li>
-          <li>Descansos de {des} mins</li>
-          <li>Periodos de descanso de {breakInterval} mins</li>
+          <li>
+            Tiempo de Estudio/Trabajo: {Math.floor(studyTime / 60) || 0} horas y{" "}
+            {studyTime % 60 || 0} mins
+          </li>
+          <li>Duración del Descanso: {des} mins</li>
+          <li>Intervalo de Descansos: {breakInterval} mins</li>
         </ol>
       </div>
       {isModalVisible && (
-        <div className='modal-container'>
-          <div className='Modal'>
-            <div className='timeout'>
-              <h1>Terminaste tu jornada, ¡enhorabuena! 🎉</h1>
-              <button onClick={handleModalClose}>Aceptar</button>
-            </div>
-            <div className='descansotime'>
-              <h1>Toca tus {des} Mins</h1>
-              <h3>Tienes {des}</h3>
-            </div>
+        <div className="modal-container">
+          <div className="Modal">
+            {isBreakTime ? (
+              <div className="descansotime">
+                <h1>¡Es hora de un descanso!</h1>
+                <h3>Tiempo restante de descanso: {formatTime(breakTimeLeft)}</h3>
+              </div>
+            ) : (
+              <div className="timeout">
+                <h1>Terminaste tu jornada, ¡enhorabuena! 🎉</h1>
+                <button onClick={handleModalClose}>Aceptar</button>
+              </div>
+            )}
           </div>
         </div>
       )}
     </main>
-  )
+  );
 }
 
-export default App
+export default App;
